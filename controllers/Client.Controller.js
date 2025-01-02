@@ -19,6 +19,8 @@ const deleteFile = async (filePath) => {
 // Create a new client
 const createClient = async (req, res) => {
     try {
+        console.log(req.body)
+        console.log(req.files)
         const clientData = req.body;
 
         // Validate required fields
@@ -61,8 +63,6 @@ const createClient = async (req, res) => {
             "PersnolDetails.ProfileSourcedFrom",
             "PersnolDetails.Personality",
             "PersnolDetails.MemberStatusChangeComment",
-            "ProfilePicture",
-            "UploadBiodata",
         ];
 
         const missingFields = requiredFields.filter((field) => {
