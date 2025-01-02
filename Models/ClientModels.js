@@ -45,7 +45,6 @@ const ClientSchema = new mongoose.Schema({
         NRIStatus: { type: String, required: true },
         SubCaste: { type: String, required: true },
         OpenforDivorce: { type: String, required: true },
-        UploadBiodata: { type: String, required: true },
         SendBiodata: { type: String, required: true },
         IsPremium: { type: String, required: true }
     },
@@ -96,10 +95,9 @@ const ClientSchema = new mongoose.Schema({
         FacebookURL: { type: String },
         TwitterURL: { type: String }
     },
-    Images: {
-        ProfilePicture: { type: String },
-        OtherPicture: { type: [String] }
-    }
+    ProfilePicture: { type: String },
+    OtherPicture: { type: [String] },
+    UploadBiodata: { type: String, required: true },
 })
 
 

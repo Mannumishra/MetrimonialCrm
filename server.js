@@ -20,8 +20,21 @@ app.use(
 );
 
 
+
+
 app.use(express.json())
 app.use(express.urlencoded({ extended: true }))
+
+
+
+app.set(express.static("./public"))
+app.use("/public", express.static("public"));
+
+// app.use((req, res, next) => {
+//     console.log("Incoming fields:", req.body);
+//     console.log("Incoming files:", req.files);
+//     next();
+// });
 
 
 app.get("/", (req, res) => {
