@@ -21,6 +21,7 @@ const upload = multer({
     { name: "ProfilePicture", maxCount: 1 },
     { name: "OtherPicture", maxCount: 5 },
     { name: "UploadBiodata", maxCount: 1 },
+    { name: "FinalProfilePicture", maxCount: 1 },
 ]);
 
 

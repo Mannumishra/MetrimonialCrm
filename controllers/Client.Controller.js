@@ -20,6 +20,86 @@ const deleteFile = async (filePath) => {
 const createClient = async (req, res) => {
     try {
         const clientData = req.body;
+
+        // Validate required fields
+        const requiredFields = [
+            "PersnolDetails.Name",
+            "PersnolDetails.Religion",
+            "PersnolDetails.Gender",
+            "PersnolDetails.DateofBirth",
+            "PersnolDetails.TimeofBirth",
+            "PersnolDetails.PlaceofBirth",
+            "PersnolDetails.MaritalStatus",
+            "PersnolDetails.PartnerPreferences",
+            "PersnolDetails.Complexion",
+            "PersnolDetails.Hobbies",
+            "PersnolDetails.DrinkingHabits",
+            "PersnolDetails.EatingHabits",
+            "PersnolDetails.Email",
+            "PersnolDetails.Mobile",
+            "PersnolDetails.Gotra",
+            "PersnolDetails.Caste",
+            "PersnolDetails.OpenforOtherCaste",
+            "PersnolDetails.BelievesinPatri",
+            "PersnolDetails.NativeTown",
+            "PersnolDetails.OpenforOtherState",
+            "PersnolDetails.NativeState",
+            "PersnolDetails.Astrologically",
+            "PersnolDetails.Visa",
+            "PersnolDetails.WillingtoGoAbroad",
+            "PersnolDetails.Weight",
+            "PersnolDetails.Height",
+            "PersnolDetails.SmokingHabits",
+            "PersnolDetails.Disability",
+            "PersnolDetails.ProfileComment",
+            "PersnolDetails.NRIStatus",
+            "PersnolDetails.SubCaste",
+            "PersnolDetails.OpenforDivorce",
+            "PersnolDetails.SendBiodata",
+            "PersnolDetails.IsPremium",
+            "PersnolDetails.EyeSight",
+            "PersnolDetails.ProfileSourcedFrom",
+            "PersnolDetails.Personality",
+            "PersnolDetails.MemberStatusChangeComment",
+            "ProfilePicture",
+            "UploadBiodata",
+        ];
+
+        const missingFields = requiredFields.filter((field) => {
+            const keys = field.split(".");
+            let value = clientData;
+            for (const key of keys) {
+                value = value?.[key];
+                if (value === undefined) return true;
+            }
+            return false;
+        });
+
+        if (missingFields.length > 0) {
+            if (req.files) {
+                // Cleanup uploaded files
+                if (req.files.ProfilePicture) {
+                    await deleteFile(req.files.ProfilePicture[0]?.path);
+                }
+                if (req.files.OtherPicture) {
+                    for (const file of req.files.OtherPicture) {
+                        await deleteFile(file.path);
+                    }
+                }
+                if (req.files.UploadBiodata) {
+                    await deleteFile(req.files.UploadBiodata[0]?.path);
+                }
+                if (req.files.FinalProfilePicture) {
+                    await deleteFile(req.files.FinalProfilePicture[0]?.path);
+                }
+            }
+            return res.status(400).json({
+                message: "Missing required fields",
+                missingFields,
+            });
+        }
+
+
         const existingClient = await Client.findOne({
             $or: [
                 { "PersnolDetails.Email": clientData.PersnolDetails.Email },
@@ -42,6 +122,9 @@ const createClient = async (req, res) => {
                 if (req.files.UploadBiodata) {
                     await deleteFile(req.files.UploadBiodata[0]?.path);
                 }
+                if (req.files.FinalProfilePicture) {
+                    await deleteFile(req.files.FinalProfilePicture[0]?.path);
+                }
             }
             return res.status(400).json({
                 message: "A client with the provided Email, Mobile, MotherNumber, or FatherNumber already exists",
@@ -59,6 +142,10 @@ const createClient = async (req, res) => {
 
             if (req.files.UploadBiodata && req.files.UploadBiodata[0]) {
                 clientData.UploadBiodata = req.files.UploadBiodata[0].path;
+            }
+
+            if (req.files.FinalProfilePicture && req.files.FinalProfilePicture[0]) {
+                clientData.FinalProfilePicture = req.files.FinalProfilePicture[0].path;
             }
         }
 
@@ -79,6 +166,9 @@ const createClient = async (req, res) => {
             }
             if (req.files.UploadBiodata) {
                 await deleteFile(req.files.UploadBiodata[0]?.path);
+            }
+            if (req.files.FinalProfilePicture) {
+                await deleteFile(req.files.FinalProfilePicture[0]?.path);
             }
         }
 
@@ -145,6 +235,13 @@ const updateClient = async (req, res) => {
                 }
                 updatedData.UploadBiodata = req.files.UploadBiodata[0].path;
             }
+
+            if (req.files.FinalProfilePicture && req.files.FinalProfilePicture[0]) {
+                if (existingClient.FinalProfilePicture) {
+                    await deleteFile(existingClient.FinalProfilePicture);
+                }
+                updatedData.FinalProfilePicture = req.files.FinalProfilePicture[0].path;
+            }
         }
 
         const updatedClient = await Client.findByIdAndUpdate(id, updatedData, { new: true });
@@ -176,6 +273,9 @@ const deleteClient = async (req, res) => {
         }
         if (client.UploadBiodata) {
             await deleteFile(client.UploadBiodata);
+        }
+        if (client.FinalProfilePicture) {
+            await deleteFile(client.FinalProfilePicture);
         }
 
         res.status(200).json({ message: "Client deleted successfully" });
