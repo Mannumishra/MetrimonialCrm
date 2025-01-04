@@ -16,14 +16,24 @@ const deleteFile = async (filePath) => {
     }
 };
 
-// Create a new client
 const createClient = async (req, res) => {
     try {
-        console.log(req.body)
-        console.log(req.files)
-        const clientData = req.body;
+        console.log("Body Data", req.body);
+        console.log("File Data", req.files);
 
-        // Validate required fields
+        const persnolDetails = JSON.parse(req.body.PersnolDetails);
+        const educationDetails = JSON.parse(req.body.EducationDetails);
+        const familyDetails = JSON.parse(req.body.familyDetails);
+        const contactDetails = JSON.parse(req.body.ContactDetails);
+
+        const clientData = {
+            ...req.body,
+            PersnolDetails: persnolDetails,
+            EducationDetails: educationDetails,
+            familyDetails: familyDetails,
+            ContactDetails: contactDetails,
+        };
+
         const requiredFields = [
             "PersnolDetails.Name",
             "PersnolDetails.Religion",
@@ -41,29 +51,26 @@ const createClient = async (req, res) => {
             "PersnolDetails.Mobile",
             "PersnolDetails.Gotra",
             "PersnolDetails.Caste",
-            "PersnolDetails.OpenforOtherCaste",
-            "PersnolDetails.BelievesinPatri",
-            "PersnolDetails.NativeTown",
-            "PersnolDetails.OpenforOtherState",
-            "PersnolDetails.NativeState",
             "PersnolDetails.Astrologically",
-            "PersnolDetails.Visa",
-            "PersnolDetails.WillingtoGoAbroad",
-            "PersnolDetails.Weight",
             "PersnolDetails.Height",
             "PersnolDetails.SmokingHabits",
             "PersnolDetails.Disability",
-            "PersnolDetails.ProfileComment",
-            "PersnolDetails.NRIStatus",
-            "PersnolDetails.SubCaste",
-            "PersnolDetails.OpenforDivorce",
             "PersnolDetails.SendBiodata",
-            "PersnolDetails.IsPremium",
-            "PersnolDetails.EyeSight",
             "PersnolDetails.ProfileSourcedFrom",
-            "PersnolDetails.Personality",
-            "PersnolDetails.MemberStatusChangeComment",
+            "EducationDetails.School",
+            "EducationDetails.Residence",
+            "EducationDetails.PersonalIncome",
+            "EducationDetails.OccupationDetails",
+            "familyDetails.FatherName",
+            "familyDetails.FatherOccupation",
+            "familyDetails.FatherQualification",
+            "familyDetails.FatherOccupationDetails",
+            "familyDetails.MotherName",
+            "familyDetails.MotherOccupation",
+            // "familyDetails.MotherQualificatation",
+            "ContactDetails.HouseStatus",
         ];
+
 
         const missingFields = requiredFields.filter((field) => {
             const keys = field.split(".");
@@ -77,28 +84,13 @@ const createClient = async (req, res) => {
 
         if (missingFields.length > 0) {
             if (req.files) {
-                // Cleanup uploaded files
-                if (req.files.ProfilePicture) {
-                    await deleteFile(req.files.ProfilePicture[0]?.path);
-                }
-                if (req.files.OtherPicture) {
-                    for (const file of req.files.OtherPicture) {
-                        await deleteFile(file.path);
-                    }
-                }
-                if (req.files.UploadBiodata) {
-                    await deleteFile(req.files.UploadBiodata[0]?.path);
-                }
-                if (req.files.FinalProfilePicture) {
-                    await deleteFile(req.files.FinalProfilePicture[0]?.path);
-                }
+                await cleanupFiles(req.files);
             }
             return res.status(400).json({
                 message: "Missing required fields",
                 missingFields,
             });
         }
-
 
         const existingClient = await Client.findOne({
             $or: [
@@ -111,70 +103,52 @@ const createClient = async (req, res) => {
 
         if (existingClient) {
             if (req.files) {
-                if (req.files.ProfilePicture) {
-                    await deleteFile(req.files.ProfilePicture[0]?.path);
-                }
-                if (req.files.OtherPicture) {
-                    for (const file of req.files.OtherPicture) {
-                        await deleteFile(file.path);
-                    }
-                }
-                if (req.files.UploadBiodata) {
-                    await deleteFile(req.files.UploadBiodata[0]?.path);
-                }
-                if (req.files.FinalProfilePicture) {
-                    await deleteFile(req.files.FinalProfilePicture[0]?.path);
-                }
+                await cleanupFiles(req.files);
             }
             return res.status(400).json({
                 message: "A client with the provided Email, Mobile, MotherNumber, or FatherNumber already exists",
             });
         }
 
-        if (req.files) {
-            if (req.files.ProfilePicture && req.files.ProfilePicture[0]) {
-                clientData.ProfilePicture = req.files.ProfilePicture[0].path;
-            }
-
-            if (req.files.OtherPicture && req.files.OtherPicture.length > 0) {
-                clientData.OtherPicture = req.files.OtherPicture.map((file) => file.path);
-            }
-
-            if (req.files.UploadBiodata && req.files.UploadBiodata[0]) {
-                clientData.UploadBiodata = req.files.UploadBiodata[0].path;
-            }
-
-            if (req.files.FinalProfilePicture && req.files.FinalProfilePicture[0]) {
-                clientData.FinalProfilePicture = req.files.FinalProfilePicture[0].path;
-            }
-        }
-
         const newClient = new Client(clientData);
         await newClient.save();
         res.status(201).json({ message: "Client created successfully", client: newClient });
     } catch (error) {
-        console.error(error);
-        // Cleanup uploaded files
+        console.error("Error:", error);
         if (req.files) {
-            if (req.files.ProfilePicture) {
-                await deleteFile(req.files.ProfilePicture[0]?.path);
-            }
-            if (req.files.OtherPicture) {
-                for (const file of req.files.OtherPicture) {
-                    await deleteFile(file.path);
-                }
-            }
-            if (req.files.UploadBiodata) {
-                await deleteFile(req.files.UploadBiodata[0]?.path);
-            }
-            if (req.files.FinalProfilePicture) {
-                await deleteFile(req.files.FinalProfilePicture[0]?.path);
-            }
+            await cleanupFiles(req.files);
         }
-
+        if (error.name === "ValidationError") {
+            const validationErrors = Object.keys(error.errors).map((key) => ({
+                field: key,
+                message: error.errors[key].message,
+            }));
+            return res.status(400).json({
+                message: "Validation failed",
+                errors: validationErrors,
+            });
+        }
         res.status(500).json({ message: "Error creating client", error: error.message });
     }
 };
+
+const cleanupFiles = async (files) => {
+    if (files.ProfilePicture) {
+        await deleteFile(files.ProfilePicture[0]?.path);
+    }
+    if (files.OtherPicture) {
+        for (const file of files.OtherPicture) {
+            await deleteFile(file.path);
+        }
+    }
+    if (files.UploadBiodata) {
+        await deleteFile(files.UploadBiodata[0]?.path);
+    }
+    if (files.FinalProfilePicture) {
+        await deleteFile(files.FinalProfilePicture[0]?.path);
+    }
+};
+
 
 
 // Get all clients
